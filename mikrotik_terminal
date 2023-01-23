@@ -1,0 +1,41 @@
+#Сохраниение настроек в текстовый файл
+export file=config_backup.rsc
+
+
+#Проверка прошивки LTE-модема
+/interface lte firmware-upgrade lte1
+
+
+# Обновление прошивки LTE-модема
+/interface lte firmware-upgrade lte1 upgrade=yes
+
+
+# Дефолтные настройки firewall
+/ip firewall filter
+add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
+add action=drop chain=input comment="defconf: drop invalid" connection-state=invalid
+add action=accept chain=input comment="defconf: accept ICMP" protocol=icmp
+add action=drop chain=input comment="defconf: drop all not coming from LAN" in-interface-list=!LAN
+add action=accept chain=forward comment="defconf: accept in ipsec policy" ipsec-policy=in,ipsec
+add action=accept chain=forward comment="defconf: accept out ipsec policy" ipsec-policy=out,ipsec
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" connection-state=established,related
+add action=accept chain=forward comment="defconf: accept established,related, untracked" connection-state=established,related,untracked
+add action=drop chain=forward comment="defconf: drop invalid" connection-state=invalid
+add action=drop chain=forward comment="defconf: drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new in-interface-list=WAN
+/ip firewall nat
+add action=masquerade chain=srcnat comment="defconf: masquerade" ipsec-policy=out,none out-interface-list=WAN
+
+
+# Прячим сеть от ОпСоСа
+1. на выход дать ttl=64:
+/ip firewall mangle
+add action=change-ttl chain=postrouting new-ttl=set:64 out-interface=lte1 passthrough=no
+
+2. повысить приходящий ttl, мтс дает 1 на вход:
+/ip firewall mangle
+add action=change-ttl chain=prerouting in-interface=lte1 new-ttl=set:5 passthrough=no
+
+
+# Закрываем 53 порт для доступа из вне.
+/ip firewall filter
+add chain=input action=drop protocol=udp in-interface=«провайдера» dst-port=53
