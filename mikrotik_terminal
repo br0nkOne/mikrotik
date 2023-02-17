@@ -1,16 +1,13 @@
-#Сохраниение настроек в текстовый файл
+## Сохраниение настроек в текстовый файл
 export file=config_backup.rsc
 
-
-#Проверка прошивки LTE-модема
+## Проверка прошивки LTE-модема
 /interface lte firmware-upgrade lte1
 
-
-# Обновление прошивки LTE-модема
+## Обновление прошивки LTE-модема
 /interface lte firmware-upgrade lte1 upgrade=yes
 
-
-# Дефолтные настройки firewall
+## Дефолтные настройки firewall
 /ip firewall filter
 add action=accept chain=input comment="defconf: accept established,related,untracked" connection-state=established,related,untracked
 add action=drop chain=input comment="defconf: drop invalid" connection-state=invalid
@@ -25,17 +22,15 @@ add action=drop chain=forward comment="defconf: drop all from WAN not DSTNATed" 
 /ip firewall nat
 add action=masquerade chain=srcnat comment="defconf: masquerade" ipsec-policy=out,none out-interface-list=WAN
 
-
-# Прячим сеть от ОпСоСа
+## Прячим сеть от ОпСоСа
 1. на выход дать ttl=64:
 /ip firewall mangle
 add action=change-ttl chain=postrouting new-ttl=set:64 out-interface=lte1 passthrough=no
-
+----------------------------------------------------------------------------------------
 2. повысить приходящий ttl, мтс дает 1 на вход:
 /ip firewall mangle
 add action=change-ttl chain=prerouting in-interface=lte1 new-ttl=set:5 passthrough=no
 
-
-# Закрываем 53 порт для доступа из вне.
+## Закрываем 53 порт для доступа из вне.
 /ip firewall filter
 add chain=input action=drop protocol=udp in-interface=«провайдера» dst-port=53
